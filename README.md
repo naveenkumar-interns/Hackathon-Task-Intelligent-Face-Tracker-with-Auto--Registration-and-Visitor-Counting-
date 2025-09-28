@@ -11,6 +11,9 @@ This project is a single-file Python application for face detection, recognition
 - **Configurability**: Settings can be customized via `config.json`.
 - **Visualization**: Displays real-time video with bounding boxes, face IDs, visitor count, frame number, and timestamp.
 
+## Explanatory Video
+🔗 **[Watch the Demo on YouTube](https://youtu.be/N9S5BhlljRM)**
+
 ## Requirements
 The project requires the following Python packages and models:
 - Python 3.6+
@@ -152,4 +155,6 @@ This project is provided as-is for educational and research purposes. Ensure com
 
 
 
-This project is a part of a hackathon run by https://katomaran.com 
+## Credits
+This project was developed as part of a hackathon run by https://katomaran.com
+
