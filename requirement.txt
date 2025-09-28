@@ -1,0 +1,10 @@
+ultralytics
+insightface
+numpy
+opencv-python
+torch
+torchvision
+torchaudio
+supervision
+sqlite3 
+onnxruntime

@@ -1,0 +1,150 @@
+# Face Detection and Recognition Pipeline
+
+This project is a single-file Python application for face detection, recognition, tracking, and logging using computer vision and machine learning techniques. It processes video streams (from files or RTSP sources) to detect faces, recognize them, track them across frames, and log entry/exit events with associated face images in a SQLite database.
+
+## Features
+- **Face Detection**: Uses YOLOv8 (`yolov8n-face.pt`) for accurate face detection.
+- **Face Recognition**: Leverages InsightFace to generate embeddings for face recognition.
+- **Tracking**: Implements CSRT trackers to maintain face identity across video frames.
+- **Event Logging**: Records one entry and one exit event per face presence, stored in a SQLite database (`faces.db`).
+- **Image Saving**: Saves cropped face images for entry and exit events in the `logs` folder.
+- **Configurability**: Settings can be customized via `config.json`.
+- **Visualization**: Displays real-time video with bounding boxes, face IDs, visitor count, frame number, and timestamp.
+
+## Requirements
+The project requires the following Python packages and models:
+- Python 3.6+
+- Libraries listed in `requirements.txt`:
+  - `ultralytics`
+  - `insightface`
+  - `opencv-python`
+  - `numpy`
+  - `sqlite3` (included in Python standard library)
+- YOLOv8 face detection model: `yolov8n-face.pt` (place in the project root)
+
+To install the required packages, run:
+```bash
+pip install -r requirements.txt
+```
+
+## Project Structure
+```
+project_folder/
+├── logs/                     # Directory for storing cropped face images
+│   ├── entries/              # Entry event face images
+│   │   ├── 2025-09-28/       # Date-based subfolders
+│   │   │   ├── 130457_5780b129.jpg
+│   │   │   └── 130457_ee38e54d.jpg
+│   └── exits/                # Exit event face images
+│       ├── 2025-09-28/
+│       │   ├── 130519_adbd584c.jpg
+│       │   └── 130522_1fa692e7.jpg
+├── config.json               # Configuration file for pipeline settings
+├── events.log                # Log file for pipeline events
+├── faces.db                  # SQLite database for face and event data
+├── main.py                   # Main script (face_pipeline_single_file.py)
+├── README.md                 # This file
+├── record_20250620_190324.mp4 # Example video file
+├── requirements.txt          # Python dependencies
+└── yolov8n-face.pt           # YOLOv8 face detection model
+```
+
+## Configuration
+The pipeline is configured via `config.json`. If the file doesn't exist, it will be created with default values. Key parameters include:
+- `detection_skip_frames`: Number of frames to skip between YOLO detections (default: 2).
+- `detection_conf_threshold`: Confidence threshold for face detection (default: 0.45).
+- `embedding_similarity_threshold`: Similarity threshold for face recognition (default: 0.40).
+- `exit_frame_threshold`: Frames after which a face is considered exited (default: 30).
+- `save_cropped`: Whether to save cropped face images (default: true).
+- `logs_folder`: Directory for logs and images (default: "logs").
+- `db_path`: Path to SQLite database (default: "faces.db").
+- `model_yolo`: YOLO model file (default: "yolov8n-face.pt").
+- `det_size`: Image size for detection (default: 640).
+- `visualize`: Enable/disable real-time visualization (default: true).
+- `camera_source`: Video source (file, RTSP URL, or camera index; default: 0).
+
+Example `config.json`:
+```json
+{
+    "detection_skip_frames": 2,
+    "detection_conf_threshold": 0.45,
+    "embedding_similarity_threshold": 0.40,
+    "exit_frame_threshold": 30,
+    "save_cropped": true,
+    "logs_folder": "logs",
+    "db_path": "faces.db",
+    "model_yolo": "yolov8n-face.pt",
+    "det_size": 640,
+    "visualize": true,
+    "camera_source": 0
+}
+```
+
+## Usage
+Run the script with the following command:
+```bash
+python main.py --source <video_source> [--max-frames <N>]
+```
+
+- `--source`: Path to a video file, RTSP URL, or camera index (e.g., `0` for default camera).
+- `--max-frames`: Optional, stops processing after N frames (useful for testing).
+
+Example commands:
+```bash
+# Process a video file
+python main.py --source record_20250620_190324.mp4
+
+# Use a webcam (default camera)
+python main.py --source 0
+
+# Process an RTSP stream
+python main.py --source rtsp://example.com/stream
+
+# Process video for 1000 frames
+python main.py --source record_20250620_190324.mp4 --max-frames 1000
+```
+
+## Database Schema
+The SQLite database (`faces.db`) contains three tables:
+- **faces**: Stores face IDs and timestamps.
+  - `id`: Unique face ID (TEXT, PRIMARY KEY).
+  - `created_at`: When the face was first detected (TEXT, ISO format).
+  - `last_seen_at`: Last time the face was seen (TEXT, ISO format).
+- **embeddings**: Stores face embeddings.
+  - `face_id`: References `faces.id` (TEXT, FOREIGN KEY).
+  - `embedding`: Face embedding vector (BLOB).
+  - `created_at`: Timestamp of embedding creation (TEXT, ISO format).
+- **events**: Logs entry and exit events.
+  - `event_id`: Unique event ID (TEXT, PRIMARY KEY).
+  - `face_id`: References `faces.id` (TEXT, FOREIGN KEY).
+  - `event_type`: "entry" or "exit" (TEXT).
+  - `timestamp`: Event timestamp (TEXT, ISO format).
+  - `img_path`: Path to cropped face image (TEXT).
+
+## Logging
+- Pipeline events are logged to `events.log` with timestamps and details.
+- Cropped face images for entry/exit events are saved in `logs/entries/YYYY-MM-DD/` and `logs/exits/YYYY-MM-DD/`, respectively, with filenames like `HHMMSS_<uuid>.jpg`.
+
+## Visualization
+When `visualize` is enabled in `config.json`, the pipeline displays:
+- Bounding boxes around detected faces with face IDs.
+- Unique visitor count (top-left).
+- Current frame number (top-right).
+- Timestamp (bottom-left).
+
+Press `q` to quit the visualization window.
+
+## Notes
+- Ensure `yolov8n-face.pt` is in the project root or update `model_yolo` in `config.json`.
+- The pipeline attempts to use GPU for InsightFace; it falls back to CPU if unavailable.
+- Face recognition uses cosine similarity with a configurable threshold.
+- Trackers are updated every frame, with YOLO detection every `detection_skip_frames` frames to optimize performance.
+
+## Troubleshooting
+- **Missing dependencies**: Install required packages using `pip install -r requirements.txt`.
+- **Model not found**: Ensure `yolov8n-face.pt` is in the project root or specify the correct path in `config.json`.
+- **Video source issues**: Verify the video file, RTSP URL, or camera index is accessible.
+- **Performance issues**: Adjust `detection_skip_frames` or `det_size` in `config.json` for faster processing.
+
+## License
+This project is provided as-is for educational and research purposes. Ensure compliance with any third-party library licenses (e.g., YOLOv8, InsightFace, OpenCV).
