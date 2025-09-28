@@ -148,3 +148,8 @@ Press `q` to quit the visualization window.
 
 ## License
 This project is provided as-is for educational and research purposes. Ensure compliance with any third-party library licenses (e.g., YOLOv8, InsightFace, OpenCV).
+
+
+
+
+This project is a part of a hackathon run by https://katomaran.com 
